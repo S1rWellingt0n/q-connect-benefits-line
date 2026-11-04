@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars and adjust.
+region             = "us-east-1"
+name               = "benefits-line"
+aws_profile        = "my-sandbox"
+claim_phone_number = true
+alarm_email        = "you@example.com"

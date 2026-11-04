@@ -1,0 +1,211 @@
+{
+  "Version": "2019-10-30",
+  "StartAction": "SetLogging",
+  "Actions": [
+    {
+      "Identifier": "SetLogging",
+      "Type": "UpdateFlowLoggingBehavior",
+      "Parameters": {"FlowLoggingBehavior": "Enabled"},
+      "Transitions": {"NextAction": "SetVoice"}
+    },
+    {
+      "Identifier": "SetVoice",
+      "Type": "UpdateContactTextToSpeechVoice",
+      "Parameters": {"TextToSpeechVoice": "${voice_id}", "TextToSpeechEngine": "Neural"},
+      "Transitions": {"NextAction": "SetQueue", "Errors": [], "Conditions": []}
+    },
+    {
+      "Identifier": "SetQueue",
+      "Type": "UpdateContactTargetQueue",
+      "Parameters": {"QueueId": "${queue_arn}"},
+      "Transitions": {
+        "NextAction": "StartSession",
+        "Errors": [{"NextAction": "SystemError", "ErrorType": "NoMatchingError"}]
+      }
+    },
+    {
+      "Identifier": "StartSession",
+      "Type": "CreateWisdomSession",
+      "Parameters": {"WisdomAssistantArn": "${assistant_arn}"},
+      "Transitions": {
+        "NextAction": "Greet",
+        "Errors": [{"NextAction": "SystemError", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "Greet",
+      "Type": "ConnectParticipantWithLexBot",
+      "Parameters": {
+        "Text": "Thanks for calling the benefits help line. I can check on a case or answer questions about our programs. How can I help?",
+        "LexV2Bot": {"AliasArn": "${bot_alias_arn}"},
+        "LexSessionAttributes": {
+          "x-amz-lex:q-in-connect:session-arn": "$.Wisdom.SessionArn",
+          "x-amz-lex:audio:start-timeout-ms:*:*": "8000",
+          "x-amz-lex:audio:end-timeout-ms:*:*": "1200"
+        }
+      },
+      "Transitions": {
+        "NextAction": "CheckTool",
+        "Errors": [
+          {"NextAction": "Timeout", "ErrorType": "InputTimeLimitExceeded"},
+          {"NextAction": "CheckTool", "ErrorType": "NoMatchingCondition"},
+          {"NextAction": "SystemError", "ErrorType": "NoMatchingError"}
+        ],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "CheckTool",
+      "Type": "Compare",
+      "Parameters": {"ComparisonValue": "$.Lex.SessionAttributes.Tool"},
+      "Transitions": {
+        "NextAction": "Resume",
+        "Conditions": [
+          {"NextAction": "EndCall", "Condition": {"Operator": "Equals", "Operands": ["end_call"]}},
+          {"NextAction": "CheckHours", "Condition": {"Operator": "Equals", "Operands": ["escalate_to_agent"]}}
+        ],
+        "Errors": [{"NextAction": "Resume", "ErrorType": "NoMatchingCondition"}]
+      }
+    },
+    {
+      "Identifier": "Resume",
+      "Type": "ConnectParticipantWithLexBot",
+      "Parameters": {
+        "Text": "Sorry, I missed that. What can I help you with?",
+        "LexV2Bot": {"AliasArn": "${bot_alias_arn}"},
+        "LexSessionAttributes": {
+          "x-amz-lex:q-in-connect:session-arn": "$.Wisdom.SessionArn",
+          "x-amz-lex:audio:start-timeout-ms:*:*": "8000",
+          "x-amz-lex:audio:end-timeout-ms:*:*": "1200"
+        }
+      },
+      "Transitions": {
+        "NextAction": "CheckTool",
+        "Errors": [
+          {"NextAction": "Timeout", "ErrorType": "InputTimeLimitExceeded"},
+          {"NextAction": "CheckTool", "ErrorType": "NoMatchingCondition"},
+          {"NextAction": "SystemError", "ErrorType": "NoMatchingError"}
+        ],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "CheckHours",
+      "Type": "CheckHoursOfOperation",
+      "Parameters": {"HoursOfOperationId": "${hours_arn}"},
+      "Transitions": {
+        "NextAction": "AfterHours",
+        "Conditions": [
+          {"NextAction": "CheckStaffing", "Condition": {"Operator": "Equals", "Operands": ["True"]}},
+          {"NextAction": "AfterHours", "Condition": {"Operator": "Equals", "Operands": ["False"]}}
+        ],
+        "Errors": [{"NextAction": "AfterHours", "ErrorType": "NoMatchingError"}]
+      }
+    },
+    {
+      "Identifier": "CheckStaffing",
+      "Type": "CheckMetricData",
+      "Parameters": {"MetricType": "NumberOfAgentsStaffed"},
+      "Transitions": {
+        "NextAction": "NoSpecialists",
+        "Conditions": [
+          {"NextAction": "TransferMessage", "Condition": {"Operator": "NumberGreaterThan", "Operands": ["0"]}}
+        ],
+        "Errors": [
+          {"NextAction": "NoSpecialists", "ErrorType": "NoMatchingCondition"},
+          {"NextAction": "NoSpecialists", "ErrorType": "NoMatchingError"}
+        ]
+      }
+    },
+    {
+      "Identifier": "TransferMessage",
+      "Type": "MessageParticipant",
+      "Parameters": {"Text": "Connecting you with a benefits specialist now."},
+      "Transitions": {
+        "NextAction": "Transfer",
+        "Errors": [{"NextAction": "Transfer", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "Transfer",
+      "Type": "TransferContactToQueue",
+      "Parameters": {},
+      "Transitions": {
+        "NextAction": "NoSpecialists",
+        "Errors": [
+          {"NextAction": "NoSpecialists", "ErrorType": "QueueAtCapacity"},
+          {"NextAction": "NoSpecialists", "ErrorType": "NoMatchingError"}
+        ]
+      }
+    },
+    {
+      "Identifier": "AfterHours",
+      "Type": "MessageParticipant",
+      "Parameters": {"Text": "Our specialists are available Monday through Friday, eight in the morning to five in the evening, Central time. Please call back then."},
+      "Transitions": {
+        "NextAction": "EndCall",
+        "Errors": [{"NextAction": "EndCall", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "NoSpecialists",
+      "Type": "MessageParticipant",
+      "Parameters": {"Text": "No specialists are available right now. Please call back later, and thank you for your patience."},
+      "Transitions": {
+        "NextAction": "EndCall",
+        "Errors": [{"NextAction": "EndCall", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "Timeout",
+      "Type": "MessageParticipant",
+      "Parameters": {"Text": "I didn't hear anything, so I'll let you go. Call back any time."},
+      "Transitions": {
+        "NextAction": "EndCall",
+        "Errors": [{"NextAction": "EndCall", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "SystemError",
+      "Type": "MessageParticipant",
+      "Parameters": {"Text": "Sorry, we're having trouble on our end. Please call back in a few minutes."},
+      "Transitions": {
+        "NextAction": "EndCall",
+        "Errors": [{"NextAction": "EndCall", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "EndCall",
+      "Type": "DisconnectParticipant",
+      "Parameters": {},
+      "Transitions": {}
+    }
+  ],
+  "Metadata": {
+    "entryPointPosition": {"x": 40, "y": 40},
+    "ActionMetadata": {
+      "SetLogging": {"position": {"x": 160, "y": 40}},
+      "SetVoice": {"position": {"x": 400, "y": 40}},
+      "SetQueue": {"position": {"x": 640, "y": 40}},
+      "StartSession": {"position": {"x": 880, "y": 40}},
+      "Greet": {"position": {"x": 1120, "y": 40}},
+      "CheckTool": {"position": {"x": 1360, "y": 40}},
+      "Resume": {"position": {"x": 1360, "y": 320}},
+      "CheckHours": {"position": {"x": 1600, "y": 40}},
+      "CheckStaffing": {"position": {"x": 1840, "y": 40}},
+      "TransferMessage": {"position": {"x": 2080, "y": 40}},
+      "Transfer": {"position": {"x": 2320, "y": 40}},
+      "AfterHours": {"position": {"x": 1840, "y": 320}},
+      "NoSpecialists": {"position": {"x": 2320, "y": 320}},
+      "Timeout": {"position": {"x": 1600, "y": 560}},
+      "SystemError": {"position": {"x": 1840, "y": 560}},
+      "EndCall": {"position": {"x": 2560, "y": 320}}
+    }
+  }
+}

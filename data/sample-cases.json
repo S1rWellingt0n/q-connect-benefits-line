@@ -1,0 +1,38 @@
+[
+  {
+    "case_number": "10483726",
+    "zip_code": "22201",
+    "program": "Disability benefits",
+    "status": "In review",
+    "status_detail": "A medical reviewer is looking at the records on file.",
+    "last_updated": "2026-10-28",
+    "next_step": "Nothing is needed from the caller right now. Reviews like this usually finish within 30 days."
+  },
+  {
+    "case_number": "20591847",
+    "zip_code": "20002",
+    "program": "Retirement benefits",
+    "status": "Additional information needed",
+    "status_detail": "The application is missing a copy of the marriage certificate.",
+    "last_updated": "2026-10-21",
+    "next_step": "Upload the marriage certificate at benefits.example by November 30, 2026, or mail it to the address on the request letter."
+  },
+  {
+    "case_number": "31740265",
+    "zip_code": "98101",
+    "program": "Survivor benefits",
+    "status": "Decision issued",
+    "status_detail": "The claim was approved.",
+    "last_updated": "2026-10-30",
+    "next_step": "A decision letter was mailed on October 30, 2026. It explains the monthly amount and the payment schedule."
+  },
+  {
+    "case_number": "45028913",
+    "zip_code": "73301",
+    "program": "Retirement benefits",
+    "status": "Payment scheduled",
+    "status_detail": "The first payment has been scheduled.",
+    "last_updated": "2026-11-02",
+    "next_step": "The first payment will be deposited on November 18, 2026."
+  }
+]

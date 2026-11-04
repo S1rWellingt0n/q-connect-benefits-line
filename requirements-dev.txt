@@ -1,0 +1,5 @@
+boto3==1.40.70
+moto[dynamodb]==5.1.17
+pytest==8.4.2
+ruff==0.14.4
+websockets==15.0.1
