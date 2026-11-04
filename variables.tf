@@ -109,6 +109,12 @@ variable "max_contact_minutes" {
   default     = 8
 }
 
+variable "notify_on_use" {
+  description = "Alarm when anyone reaches the line, so you know a demo got used."
+  type        = bool
+  default     = false
+}
+
 variable "alarm_email" {
   description = "Email that gets alarm notifications. Leave null to skip the subscription."
   type        = string
