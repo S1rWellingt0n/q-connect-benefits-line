@@ -71,7 +71,7 @@ terraform apply
 
 The apply takes a few minutes. After that, the knowledge base needs about 15 minutes to ingest and index the articles. Until it's done, the agent says it doesn't have the answer and offers a specialist.
 
-Set `claim_phone_number = true` to give the line a number. New Connect instances start with a per-instance phone number quota of 0 in some accounts, which shows up as "The allowed limit for claimed phone numbers has been exceeded for your instance". Service Quotas lists it as "Phone numbers per instance" at the resource level, and an increase can be requested there with the instance ARN as the context.
+Set `claim_phone_number = true` to give the line a number. In some accounts a new instance can't claim one and fails with "The allowed limit for claimed phone numbers has been exceeded for your instance", even though the documented default is 10. Service Quotas shows the real value as "Phone numbers per instance" at the resource level. Request an increase there with the instance ARN as the context, and AWS Support reviews it.
 
 ## Test
 
