@@ -82,9 +82,8 @@ resource "awscc_wisdom_ai_guardrail" "main" {
 # The agent pins published versions of its prompt and guardrail. A change to
 # either one cuts a new version and moves the agent to it.
 resource "awscc_wisdom_ai_prompt_version" "orchestration" {
-  assistant_id          = local.assistant_id
-  ai_prompt_id          = awscc_wisdom_ai_prompt.orchestration.ai_prompt_id
-  modified_time_seconds = awscc_wisdom_ai_prompt.orchestration.modified_time_seconds
+  assistant_id = local.assistant_id
+  ai_prompt_id = awscc_wisdom_ai_prompt.orchestration.ai_prompt_id
 
   lifecycle {
     create_before_destroy = true
@@ -93,9 +92,8 @@ resource "awscc_wisdom_ai_prompt_version" "orchestration" {
 }
 
 resource "awscc_wisdom_ai_guardrail_version" "main" {
-  assistant_id          = local.assistant_id
-  ai_guardrail_id       = awscc_wisdom_ai_guardrail.main.ai_guardrail_id
-  modified_time_seconds = awscc_wisdom_ai_guardrail.main.modified_time_seconds
+  assistant_id    = local.assistant_id
+  ai_guardrail_id = awscc_wisdom_ai_guardrail.main.ai_guardrail_id
 
   lifecycle {
     create_before_destroy = true
