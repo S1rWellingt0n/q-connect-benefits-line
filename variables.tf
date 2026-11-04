@@ -80,6 +80,18 @@ variable "tool_concurrency_limit" {
   default     = 20
 }
 
+variable "daily_contact_limit" {
+  description = "Contacts allowed per UTC day. Past it, callers hear a closing message and nothing billable runs."
+  type        = number
+  default     = 20
+}
+
+variable "max_contact_minutes" {
+  description = "Longest a contact may run before the sweep ends it."
+  type        = number
+  default     = 8
+}
+
 variable "alarm_email" {
   description = "Email that gets alarm notifications. Leave null to skip the subscription."
   type        = string

@@ -41,6 +41,8 @@ Encryption and logs. One customer managed KMS key with rotation covers the table
 
 Guardrail. The agent runs behind a Q in Connect AI guardrail with content filters, prompt attack detection, denied topics for legal advice and politics, and PII masking for Social Security, bank account and card numbers.
 
+Abuse limits. A demo number can be dialed by anyone, so the flow's first step asks a gate Lambda whether today's contact count is under `daily_contact_limit` (20 by default). Anything but an explicit yes, including a Lambda error, plays a closing message and hangs up before any AI session starts. A sweep runs every minute and ends any contact older than `max_contact_minutes` (8). Together they put a hard ceiling on what the line can spend in a day.
+
 Versioning. The agent pins published versions of its prompt and guardrail. Changing either file cuts a new version and moves the agent to it on the next apply.
 
 Partitions. Every ARN is built from `aws_partition`, so nothing assumes the commercial partition. Check that Connect, Q in Connect and AgentCore Gateway are available in your target region before deploying there.
@@ -67,11 +69,13 @@ terraform init
 terraform apply
 ```
 
-The apply takes a few minutes. After that, the knowledge base needs about 15 minutes to ingest and index the articles. Until it's done, the agent says it doesn't have the answer and offers a specialist. Set `claim_phone_number = true` to give the line a number. New Connect instances sometimes can't claim numbers until AWS raises the instance's limit through a support case.
+The apply takes a few minutes. After that, the knowledge base needs about 15 minutes to ingest and index the articles. Until it's done, the agent says it doesn't have the answer and offers a specialist.
+
+Set `claim_phone_number = true` to give the line a number. New Connect instances start with a per-instance phone number quota of 0 in some accounts, which shows up as "The allowed limit for claimed phone numbers has been exceeded for your instance". Service Quotas lists it as "Phone numbers per instance" at the resource level, and an increase can be requested there with the instance ARN as the context.
 
 ## Test
 
-Unit tests cover the tool Lambda against a mocked DynamoDB table:
+Unit tests cover the case tool and the call guard against mocked DynamoDB:
 
 ```sh
 python -m venv .venv && . .venv/bin/activate
@@ -88,7 +92,7 @@ python scripts/chat_smoke.py "What's the status of case 10483726?" "22201"
 
 The sample cases are in `data/sample-cases.json`.
 
-CI runs ruff, pytest, `terraform fmt`, `terraform validate` and checkov on every push. Checkov passes with 13 skips, and each skip has its reason written next to it in the code.
+CI runs ruff, pytest, `terraform fmt`, `terraform validate` and checkov on every push. Checkov passes with 19 skips, and each skip has its reason written next to it in the code.
 
 ## A real conversation
 
@@ -126,7 +130,7 @@ Other runs confirmed that a wrong ZIP gets "no match" without saying which numbe
 
 ## Cost
 
-A Connect instance has no fixed fee. Connect bills per minute or per message, a claimed number is about a dollar a month, and the KMS key is a dollar a month. Lambda, DynamoDB, S3 and the gateway cost pennies at test volume. Run `terraform destroy` when you're done.
+A Connect instance has no fixed fee. Connect bills per minute or per message, a claimed number is about a dollar a month, and the KMS key is a dollar a month. Lambda, DynamoDB, S3 and the gateway cost pennies at test volume. With the default limits, the most the line can run is 20 contacts of 8 minutes a day. Run `terraform destroy` when you're done.
 
 ## Layout
 
@@ -137,12 +141,13 @@ agent.tf            assistant, prompt, guardrail, AI agent, security profile
 knowledge.tf        S3 knowledge base and its ingestion
 lex.tf              speech layer bot, built from Lex's import format
 tools.tf            case table, tool Lambda, AgentCore Gateway and target
+guard.tf            daily contact limit and long-contact sweep
 monitoring.tf       alarms on the tool Lambda
 kms.tf              the customer managed key
 flows/              contact flow template
 prompts/            orchestration prompt
 knowledge/          program and policy articles
-lambda/             MCP tool code
+lambda/             MCP tool and call guard code
 tests/              unit tests
 scripts/            live smoke test
 data/               sample cases

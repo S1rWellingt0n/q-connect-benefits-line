@@ -12,7 +12,38 @@
       "Identifier": "SetVoice",
       "Type": "UpdateContactTextToSpeechVoice",
       "Parameters": {"TextToSpeechVoice": "${voice_id}", "TextToSpeechEngine": "Neural"},
-      "Transitions": {"NextAction": "SetQueue", "Errors": [], "Conditions": []}
+      "Transitions": {"NextAction": "Gate", "Errors": [], "Conditions": []}
+    },
+    {
+      "Identifier": "Gate",
+      "Type": "InvokeLambdaFunction",
+      "Parameters": {"LambdaFunctionARN": "${gate_arn}", "InvocationTimeLimitSeconds": "3"},
+      "Transitions": {
+        "NextAction": "CheckGate",
+        "Errors": [{"NextAction": "LineUnavailable", "ErrorType": "NoMatchingError"}]
+      }
+    },
+    {
+      "Identifier": "CheckGate",
+      "Type": "Compare",
+      "Parameters": {"ComparisonValue": "$.External.allowed"},
+      "Transitions": {
+        "NextAction": "LineUnavailable",
+        "Conditions": [
+          {"NextAction": "SetQueue", "Condition": {"Operator": "Equals", "Operands": ["true"]}}
+        ],
+        "Errors": [{"NextAction": "LineUnavailable", "ErrorType": "NoMatchingCondition"}]
+      }
+    },
+    {
+      "Identifier": "LineUnavailable",
+      "Type": "MessageParticipant",
+      "Parameters": {"Text": "Thanks for calling. This line isn't taking calls right now. Please try again later."},
+      "Transitions": {
+        "NextAction": "EndCall",
+        "Errors": [{"NextAction": "EndCall", "ErrorType": "NoMatchingError"}],
+        "Conditions": []
+      }
     },
     {
       "Identifier": "SetQueue",
@@ -192,6 +223,9 @@
     "ActionMetadata": {
       "SetLogging": {"position": {"x": 160, "y": 40}},
       "SetVoice": {"position": {"x": 400, "y": 40}},
+      "Gate": {"position": {"x": 400, "y": 240}},
+      "CheckGate": {"position": {"x": 640, "y": 240}},
+      "LineUnavailable": {"position": {"x": 640, "y": 480}},
       "SetQueue": {"position": {"x": 640, "y": 40}},
       "StartSession": {"position": {"x": 880, "y": 40}},
       "Greet": {"position": {"x": 1120, "y": 40}},

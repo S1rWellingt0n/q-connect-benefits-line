@@ -58,12 +58,14 @@ resource "aws_connect_contact_flow" "benefits_line" {
     bot_alias_arn = awscc_lex_bot_alias.live.arn
     queue_arn     = aws_connect_queue.specialists.arn
     hours_arn     = aws_connect_hours_of_operation.specialists.arn
+    gate_arn      = aws_lambda_function.guard["gate"].arn
   })
 
   depends_on = [
     awscc_connect_integration_association.assistant,
     awscc_connect_integration_association.lex_bot,
     terraform_data.default_agent,
+    aws_connect_lambda_function_association.gate,
   ]
 }
 
