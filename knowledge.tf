@@ -169,7 +169,7 @@ resource "awscc_wisdom_knowledge_base" "policy" {
 }
 
 resource "awscc_wisdom_assistant_association" "policy" {
-  assistant_id     = awscc_wisdom_assistant.main.assistant_id
+  assistant_id     = local.assistant_id
   association_type = "KNOWLEDGE_BASE"
 
   association = {

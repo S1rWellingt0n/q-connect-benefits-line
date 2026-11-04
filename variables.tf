@@ -15,6 +15,23 @@ variable "name" {
   }
 }
 
+variable "existing_instance_id" {
+  description = "Deploy into this Connect instance instead of creating one."
+  type        = string
+  default     = null
+}
+
+variable "existing_assistant_id" {
+  description = "Use this Q in Connect assistant, already associated with existing_instance_id, instead of creating one. Needed when the instance already has an assistant, since an instance takes only one."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.existing_assistant_id == null || var.existing_instance_id != null
+    error_message = "existing_assistant_id needs existing_instance_id, the instance the assistant is associated with."
+  }
+}
+
 variable "aws_profile" {
   description = "Named AWS CLI profile for the two steps that run through the CLI. Leave null to use the default credential chain."
   type        = string

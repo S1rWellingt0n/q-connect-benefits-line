@@ -61,13 +61,13 @@ async def collect_replies(events, quiet_seconds, timeout):
     return replies, ended
 
 
-async def run(turns, region, quiet_seconds, timeout):
+async def run(turns, region, quiet_seconds, timeout, instance_id=None, flow_id=None):
     connect = boto3.client("connect", region_name=region)
     participant = boto3.client("connectparticipant", region_name=region)
 
     contact = connect.start_chat_contact(
-        InstanceId=terraform_output("instance_id"),
-        ContactFlowId=terraform_output("contact_flow_id"),
+        InstanceId=instance_id or terraform_output("instance_id"),
+        ContactFlowId=flow_id or terraform_output("contact_flow_id"),
         ParticipantDetails={"DisplayName": "Smoke test"},
     )
     connection = participant.create_participant_connection(
@@ -111,8 +111,13 @@ def main():
     parser.add_argument("--region", default=None)
     parser.add_argument("--quiet-seconds", type=float, default=6, help="Silence that ends a reply.")
     parser.add_argument("--timeout", type=float, default=60, help="Longest wait for a reply.")
+    parser.add_argument("--instance-id", help="Defaults to the Terraform output.")
+    parser.add_argument("--contact-flow-id", help="Defaults to the Terraform output.")
     args = parser.parse_args()
-    asyncio.run(run(args.turns or DEFAULT_TURNS, args.region, args.quiet_seconds, args.timeout))
+    turns = args.turns or DEFAULT_TURNS
+    asyncio.run(
+        run(turns, args.region, args.quiet_seconds, args.timeout, args.instance_id, args.contact_flow_id)
+    )
     return 0
 
 

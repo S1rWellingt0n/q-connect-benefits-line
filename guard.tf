@@ -81,7 +81,7 @@ resource "aws_lambda_function" "guard" {
       TABLE_NAME          = aws_dynamodb_table.guard.name
       DAILY_CONTACT_LIMIT = tostring(var.daily_contact_limit)
       MAX_CONTACT_SECONDS = tostring(var.max_contact_minutes * 60)
-      INSTANCE_ID         = aws_connect_instance.main.id
+      INSTANCE_ID         = local.instance_id
     }
   }
 
@@ -137,7 +137,7 @@ data "aws_iam_policy_document" "guard" {
     content {
       sid       = "StopLongContacts"
       actions   = ["connect:StopContact"]
-      resources = ["${aws_connect_instance.main.arn}/contact/*"]
+      resources = ["${local.instance_arn}/contact/*"]
     }
   }
 }
@@ -155,12 +155,12 @@ resource "aws_lambda_permission" "gate_from_connect" {
   action         = "lambda:InvokeFunction"
   function_name  = aws_lambda_function.guard["gate"].function_name
   principal      = "connect.amazonaws.com"
-  source_arn     = aws_connect_instance.main.arn
+  source_arn     = local.instance_arn
   source_account = local.account_id
 }
 
 resource "aws_connect_lambda_function_association" "gate" {
-  instance_id  = aws_connect_instance.main.id
+  instance_id  = local.instance_id
   function_arn = aws_lambda_function.guard["gate"].arn
 }
 

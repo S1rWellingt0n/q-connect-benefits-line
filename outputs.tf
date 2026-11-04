@@ -4,7 +4,7 @@ output "instance_url" {
 }
 
 output "instance_id" {
-  value = aws_connect_instance.main.id
+  value = local.instance_id
 }
 
 output "contact_flow_id" {
@@ -17,7 +17,7 @@ output "phone_number" {
 }
 
 output "assistant_id" {
-  value = awscc_wisdom_assistant.main.assistant_id
+  value = local.assistant_id
 }
 
 output "ai_agent_id" {

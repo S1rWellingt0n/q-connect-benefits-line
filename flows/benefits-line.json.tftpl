@@ -59,9 +59,34 @@
       "Type": "CreateWisdomSession",
       "Parameters": {"WisdomAssistantArn": "${assistant_arn}"},
       "Transitions": {
-        "NextAction": "Greet",
+        "NextAction": "BindAgent",
         "Errors": [{"NextAction": "SystemError", "ErrorType": "NoMatchingError"}],
         "Conditions": []
+      }
+    },
+    {
+      "Identifier": "BindAgent",
+      "Type": "InvokeLambdaFunction",
+      "Parameters": {
+        "LambdaFunctionARN": "${bind_arn}",
+        "InvocationTimeLimitSeconds": "3",
+        "LambdaInvocationAttributes": {"sessionArn": "$.Wisdom.SessionArn"}
+      },
+      "Transitions": {
+        "NextAction": "CheckBind",
+        "Errors": [{"NextAction": "SystemError", "ErrorType": "NoMatchingError"}]
+      }
+    },
+    {
+      "Identifier": "CheckBind",
+      "Type": "Compare",
+      "Parameters": {"ComparisonValue": "$.External.status"},
+      "Transitions": {
+        "NextAction": "SystemError",
+        "Conditions": [
+          {"NextAction": "Greet", "Condition": {"Operator": "Equals", "Operands": ["ok"]}}
+        ],
+        "Errors": [{"NextAction": "SystemError", "ErrorType": "NoMatchingCondition"}]
       }
     },
     {
@@ -228,6 +253,8 @@
       "LineUnavailable": {"position": {"x": 640, "y": 480}},
       "SetQueue": {"position": {"x": 640, "y": 40}},
       "StartSession": {"position": {"x": 880, "y": 40}},
+      "BindAgent": {"position": {"x": 880, "y": 240}},
+      "CheckBind": {"position": {"x": 1120, "y": 240}},
       "Greet": {"position": {"x": 1120, "y": 40}},
       "CheckTool": {"position": {"x": 1360, "y": 40}},
       "Resume": {"position": {"x": 1360, "y": 320}},

@@ -35,7 +35,7 @@ locals {
     parentIntentSignature = "AMAZON.QInConnectIntent"
     qInConnectIntentConfiguration = {
       qInConnectAssistantConfiguration = {
-        assistantArn = awscc_wisdom_assistant.main.assistant_arn
+        assistantArn = local.assistant_arn
       }
     }
     dialogCodeHook = { enabled = false }
@@ -218,9 +218,9 @@ data "aws_iam_policy_document" "lex" {
       "wisdom:PutFeedback",
     ]
     resources = [
-      awscc_wisdom_assistant.main.assistant_arn,
-      "${awscc_wisdom_assistant.main.assistant_arn}/*",
-      "arn:${local.partition}:wisdom:${local.region}:${local.account_id}:session/${awscc_wisdom_assistant.main.assistant_id}/*",
+      local.assistant_arn,
+      "${local.assistant_arn}/*",
+      "arn:${local.partition}:wisdom:${local.region}:${local.account_id}:session/${local.assistant_id}/*",
     ]
   }
 

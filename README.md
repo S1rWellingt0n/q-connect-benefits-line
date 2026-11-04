@@ -20,7 +20,7 @@ flowchart LR
     hours --> queue[Specialist queue]
 ```
 
-The contact flow starts a Q in Connect session and hands every turn to a Lex bot whose only real intent is `AMAZON.QInConnectIntent`. The orchestration agent decides what to do on each turn. It has four tools:
+The contact flow starts a Q in Connect session, points it at this line's agent, and hands every turn to a Lex bot whose only real intent is `AMAZON.QInConnectIntent`. The orchestration agent decides what to do on each turn. It has four tools:
 
 | Tool | Type | What it does |
 |---|---|---|
@@ -53,7 +53,7 @@ Some of this is new enough that the providers haven't caught up. These are the w
 
 The Lex intent that hands turns to Q in Connect needs the assistant ARN, and neither the `aws` nor the `awscc` provider can set it. Lex's import format can, so Terraform renders the bot definition, zips it and imports it from S3 (`lex.tf`).
 
-Making this agent the assistant's self-service orchestrator, and attaching the security profile to the AI agent, have no Terraform resources yet. Two small `terraform_data` resources call the AWS CLI for those, and both undo themselves on destroy (`agent.tf`).
+Attaching the security profile to the AI agent, and making the agent the self-service default on an assistant this project creates, have no Terraform resources yet. Two small `terraform_data` resources call the AWS CLI for those, and both undo themselves on destroy (`agent.tf`).
 
 Connect puts the MCP integration identifier in the JWT audience it sends to the gateway. The identifier can be any string, so it's set to a known name and used as the gateway's allowed audience. That avoids a second pass to feed the gateway ID back into its own config.
 
@@ -70,6 +70,14 @@ terraform apply
 ```
 
 The apply takes a few minutes. After that, the knowledge base needs about 15 minutes to ingest and index the articles. Until it's done, the agent says it doesn't have the answer and offers a specialist.
+
+### Into an existing instance
+
+Most teams already have a Connect instance, and an instance can hold only one Q in Connect assistant. Set `existing_instance_id`, and `existing_assistant_id` if the instance already has an assistant. The stack then adds its own prompt, guardrail, agent and knowledge base to that assistant without touching the assistant's default agent. A small Lambda (`bind_agent`) points each session at this agent right after the flow creates it, so other lines on the same assistant keep answering as before. The live demo runs this way.
+
+The aws provider treats `instance_id` on queues, hours and flows as updatable in place, so moving an existing deployment from one instance to another needs `-replace` on those three.
+
+### Phone number
 
 Set `claim_phone_number = true` to give the line a number. In some accounts a new instance can't claim one and fails with "The allowed limit for claimed phone numbers has been exceeded for your instance", even though the documented default is 10. Service Quotas shows the real value as "Phone numbers per instance" at the resource level. Request an increase there with the instance ARN as the context, and AWS Support reviews it.
 
@@ -92,7 +100,7 @@ python scripts/chat_smoke.py "What's the status of case 10483726?" "22201"
 
 The sample cases are in `data/sample-cases.json`.
 
-CI runs ruff, pytest, `terraform fmt`, `terraform validate` and checkov on every push. Checkov passes with 19 skips, and each skip has its reason written next to it in the code.
+CI runs ruff, pytest, `terraform fmt`, `terraform validate` and checkov on every push. Checkov passes with 22 skips, and each skip has its reason written next to it in the code.
 
 ## A real conversation
 
